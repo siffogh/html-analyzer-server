@@ -7,38 +7,36 @@ const postAnalyzeHandler = (req, reply) => {
   const link = req.payload.link;
   logger.info(`link: ${link}`);
   analyzer(link)
-  .then(html => {
-    // logger.info(`html: ${html}`);
-    reply('success');
+  .then((result) => {
+    reply(`success: ${JSON.stringify(result)}`);
   })
-  .catch(err => {
+  .catch((err) => {
     logger.error(err);
     reply(Boom.notFound('Invalid URL'));
   });
-
 };
 
 const postAnalyzeConfig = {
   handler: postAnalyzeHandler,
   validate: {
     payload: {
-      link: Joi.string()
-    }
-  }
-}
-
-
-module.exports =  (
-  [
-    {
-      method: 'GET',
-      path:'/',
-      handler: (req, reply) => reply('hello world')
+      link: Joi.string(),
     },
-    {
-      method: 'POST',
-      path: '/api/analyze',
-      config: postAnalyzeConfig
-    }
-  ]
-)
+  },
+};
+
+
+module.exports = (
+[
+  {
+    method: 'GET',
+    path: '/',
+    handler: (req, reply) => reply('hello world'),
+  },
+  {
+    method: 'POST',
+    path: '/api/analyze',
+    config: postAnalyzeConfig,
+  },
+]
+);
