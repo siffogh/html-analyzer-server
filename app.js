@@ -7,7 +7,8 @@ const routes = require('./routes');
 const server = new Hapi.Server();
 server.connection({
     host: 'localhost',
-    port: 8000
+    port: 8000,
+    routes: { cors: true },
 });
 
 // Add the routes
