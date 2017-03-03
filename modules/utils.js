@@ -8,17 +8,15 @@ const logger = require('./logger');
 const linkRegex = new RegExp(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
 
 const isAccessibleLink = (el) => {
+  const timeout = 30000;
   const href = el.attribs.href;
-  const options = {
-    timeout: 10000,
-    uri: href,
-  };
-  return rp(options).catch(() => Promise.resolve(0));
+  const timeoutPromise = Promise.delay(timeout).then(() => Promise.resolve(0));
+  return Promise.race([timeoutPromise, rp(href).catch(() => Promise.resolve(0))]);
 };
 
 const countAccessibleLinks = els => _.pipe(
     _.map(isAccessibleLink),
-    promises => Promise.all(promises).catch(console.log),
+    promises => Promise.all(promises).catch(logger.error),
     finalPromise => finalPromise.then(results => (
       _.filter(res => res !== 0)(results)
     ))
@@ -76,7 +74,6 @@ module.exports = {
       (res) => {
         if (res) {
           externalLinks = res.length;
-          console.log('externalLinks: ', _.map(l => l.attribs.href)(res));
         }
         internalLinks = anchors.length - externalLinks;
         return res;
@@ -93,7 +90,6 @@ module.exports = {
     )(anchors);
   },
   hasForm($) {
-    console.log($(':root').find('form').length);
     return $(':root').find('form').length !== 0;
   },
 };
