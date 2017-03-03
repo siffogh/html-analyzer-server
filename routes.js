@@ -7,8 +7,8 @@ const postAnalyzeHandler = (req, reply) => {
   const link = req.payload.link;
   logger.info(`link: ${link}`);
   analyzer(link)
-  .then((result) => {
-    reply(`success: ${JSON.stringify(result)}`);
+  .then((content) => {
+    reply({ content });
   })
   .catch((err) => {
     logger.error(err);
