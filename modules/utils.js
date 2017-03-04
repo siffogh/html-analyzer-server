@@ -1,9 +1,14 @@
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const rp = require('request-promise');
+const Joi = require('joi');
+const Boom = require('boom');
+const jwt = require('jsonwebtoken');
+
+const config = require('../config')
 const htmlVersions = require('../static/htmlVersions');
 const logger = require('./logger');
-
+const User = require('../models/User')
 
 const linkRegex = new RegExp(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
 
@@ -20,7 +25,8 @@ const countAccessibleLinks = els => _.pipe(
     finalPromise => finalPromise.then(results => (
       _.filter(res => res !== 0)(results)
     ))
-  )(els);
+)(els);
+
 const isExternalLink = (el, pageHost) => {
   const href = el.attribs.href;
   if (!href) {
@@ -91,5 +97,64 @@ module.exports = {
   },
   hasForm($) {
     return $(':root').find('form').length !== 0;
+  },
+  validateUserSchema: Joi.object({
+    username: Joi.string().alphanum().min(2).max(30).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
+  verifyUniqueUser(req, reply) {
+    User.findOne({
+      $or: [
+        { email: req.payload.email },
+        { username: req.payload.username }
+      ]
+    }, (err, user) => {
+      // Check whether the username or email
+      // is already taken and error out if so
+      if (user) {
+        if (user.username === req.payload.username) {
+          return reply(Boom.badRequest('Username taken'));
+        }
+        if (user.email === req.payload.email) {
+          return reply(Boom.badRequest('Email taken'));
+        }
+      }
+      // If everything checks out, send the payload through
+      // to the route handler
+      return reply(req.payload);
+    });
+  },
+  createToken(user) {
+    return jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+      },
+      config.secret,
+      {
+        algorithm: 'HS256',
+        expiresIn: '1h',
+      }
+    );
+  },
+  verifyCredentials(req, reply) {
+    const password = req.payload.password;
+
+    User.findOne({
+      $or: [
+        { email: req.payload.user },
+        { username: req.payload.user },
+      ],
+    }, (err, user) => {
+      if (user) {
+        if (user.validPassword(password)) {
+          console.log('valid password');
+          return reply(user);
+        }
+        return reply(Boom.badRequest('Incorrect password!'));
+      }
+      return reply(Boom.badRequest('Incorrect username or email!'));
+    });
   },
 };
