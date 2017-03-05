@@ -7,7 +7,7 @@ const config = require('./config');
 
 const server = new Hapi.Server();
 server.connection({
-  host: 'localhost',
+  host: '0.0.0.0',
   port: config.port,
   routes: { cors: true },
 });
