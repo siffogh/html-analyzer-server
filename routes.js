@@ -5,8 +5,8 @@ const logger = require('./modules/logger');
 const analyzer = require('./modules/analyzer');
 const User = require('./models/User');
 const utils = require('./modules/utils');
-// postAnalyze
 
+// postAnalyze
 const postAnalyzeHandler = (req, reply) => {
   const link = req.payload.link;
   logger.info(`link: ${link}`);
@@ -16,7 +16,7 @@ const postAnalyzeHandler = (req, reply) => {
   })
   .catch((err) => {
     logger.error(err);
-    reply(Boom.notFound('Invalid URL'));
+    reply(Boom.notFound('Invalid URL. Please review your URL or make sure the protocol is included.'));
   });
 };
 
@@ -26,6 +26,9 @@ const postAnalyzeConfig = {
     payload: {
       link: Joi.string(),
     },
+  },
+  auth: {
+    strategy: 'jwt',
   },
 };
 
@@ -41,7 +44,7 @@ const signupHandler = (req, reply) => {
       throw Boom.badRequest(err);
     }
     // If the user is saved successfully, issue a JWT
-    reply({ id_token: utils.createToken(savedUser) }).code(201);
+    reply({ token: utils.createToken(savedUser), user: savedUser }).code(201);
   });
 };
 
@@ -58,7 +61,7 @@ const signupConfig = {
 // login
 
 const loginHandler = (req, reply) => (
-  reply({ id_token: utils.createToken(req.pre.user) }).code(201)
+  reply({ token: utils.createToken(req.pre.user), user: req.pre.user }).code(201)
 );
 
 const loginConfig = {
@@ -69,13 +72,9 @@ const loginConfig = {
   handler: loginHandler,
 };
 
+
 module.exports = (
 [
-  {
-    method: 'GET',
-    path: '/',
-    handler: (req, reply) => reply('hello world'),
-  },
   {
     method: 'POST',
     path: '/api/analyze',

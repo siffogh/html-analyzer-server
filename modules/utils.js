@@ -149,7 +149,6 @@ module.exports = {
     }, (err, user) => {
       if (user) {
         if (user.validPassword(password)) {
-          console.log('valid password');
           return reply(user);
         }
         return reply(Boom.badRequest('Incorrect password!'));

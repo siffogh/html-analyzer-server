@@ -12,8 +12,15 @@ server.connection({
   routes: { cors: true },
 });
 
-// Add the routes
-routes.map(route => server.route(route));
+server.register(require('hapi-auth-jwt'), () => {
+  server.auth.strategy('jwt', 'jwt', {
+    key: config.secret,
+    verifyOptions: { algorithms: ['HS256'] },
+  });
+  // Add the routes
+  routes.map(route => server.route(route));
+});
+
 
 server.start((err) => {
   if (err) {
